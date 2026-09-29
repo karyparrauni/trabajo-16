@@ -71,7 +71,7 @@ jobs:
       # PATRÓN TP10B: Renderizado previo de Helm para evitar falsos positivos
       - name: Renderizar Helm Chart (TP10B - Sin Falsos Positivos)
         run: |
-          helm template \${{ env.HELM_RELEASE_NAME }} ./devops-tp12/chart > manifests-rendered-prod.yaml
+          helm template ${{ env.HELM_RELEASE_NAME }} ./devops-tp12/chart > manifests-rendered-prod.yaml
 
       - name: Escaneo de Contenedor & SCA (Andon Cord)
         uses: aquasecurity/trivy-action@master
@@ -94,10 +94,10 @@ jobs:
       - name: Resumen de Andon Cord en GitHub
         if: always()
         run: |
-          echo "### Auditoría Bloqueante de Seguridad (Andon Cord) 🛡️" >> \$GITHUB_STEP_SUMMARY
-          echo "| Evaluación | Severidades | Política de Control |" >> \$GITHUB_STEP_SUMMARY
-          echo "|------------|-------------|---------------------|" >> \$GITHUB_STEP_SUMMARY
-          echo "| **Contenedor, SCA e IaC Renderizado** | \`HIGH, CRITICAL\` | **Andon Cord Activo** (Bloquea si hay CVEs) |" >> \$GITHUB_STEP_SUMMARY
+          echo "### Auditoría Bloqueante de Seguridad (Andon Cord) 🛡️" >> $GITHUB_STEP_SUMMARY
+          echo "| Evaluación | Severidades | Política de Control |" >> $GITHUB_STEP_SUMMARY
+          echo "|------------|-------------|---------------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Contenedor, SCA e IaC Renderizado** | \`HIGH, CRITICAL\` | **Andon Cord Activo** (Bloquea si hay CVEs) |" >> $GITHUB_STEP_SUMMARY
 
   # =========================================================================
   # FASE 2B: AUDITORÍA DE SEGURIDAD - REPORTE INFORMATIVO (LOW/MEDIUM)
@@ -162,8 +162,8 @@ jobs:
       - name: Login a Docker Hub
         uses: docker/login-action@v3
         with:
-          username: \${{ secrets.DOCKERHUB_USERNAME }}
-          password: \${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Etiquetar y Push a Docker Hub
         run: |
