@@ -1,72 +1,72 @@
-# Portfolio DevSecOps: Scripts Automatizados, Infraestructura y Seguridad CI/CD
+# TP16 — Escaneo de Seguridad de Contenedores, Dependencias (SCA) e IaC con Trivy
 
-[![DevSecOps - Semgrep SAST Scan](https://github.com/karyparrauni/trabajo-15/actions/workflows/semgrep.yml/badge.svg)](https://github.com/karyparrauni/trabajo-15/actions)
+[![CI/CD Pipeline - Trivy Security](https://github.com/karyparrauni/trabajo-16/actions/workflows/cicd.yml/badge.svg)](https://github.com/karyparrauni/trabajo-16/actions)
 
-## 📌 Visión General del Portfolio (TP01 a TP15)
-Este repositorio centraliza y consolida el recorrido práctico completo de la materia, abarcando desde la administración base en sistemas Linux y la automatización mediante scripting, hasta la orquestación en la nube y la integración de la cadena completa de **DevSecOps** en pipelines de CI/CD.
-
-| Bloque Temático | Trabajos Prácticos | Tecnologías y Conceptos Clave |
-|---|---|---|
-| **Fundamentos de Operaciones** | **TP01 – TP04** | Scripting automatizado en Bash, principio de menor privilegio (`devops-deploy`), flujo de trabajo colaborativo Gitflow y diagnóstico de conectividad de red en formato YAML. |
-| **Contenerización y Redes** | **TP05 – TP06** | Empaquetado en Docker (Flask API), optimización por capas, usuarios no-root y orquestación multicapa con Docker Compose (Nginx, Flask, PostgreSQL). |
-| **CI/CD y Observabilidad** | **TP07 – TP08** | Pipelines automatizados en GitHub Actions, pruebas locales con `act`, instrumentación de métricas con Prometheus y tableros en Grafana. |
-| **Orquestación en Kubernetes** | **TP09 – TP10** | Administración declarativa en K8s (Pods, Secrets, PVC), enrutamiento con Ingress Controllers y parametrización mediante Charts personalizados en Helm. |
-| **Infraestructura como Código** | **TP11 – TP12** | Aprovisionamiento modular de infraestructura con Terraform y consolidación del portfolio unificado en un ecosistema integrable. |
-| **Cadena DevSecOps Integral** | **TP13 – TP15** | **DAST** dinámico con OWASP ZAP, **Modelado de Amenazas** con Threagile, y **SAST** multilenguaje con Semgrep y freno de mano (*Andon Cord*). |
+## 📌 Visión General del Práctico
+El **TP16** consolida la integración de **Trivy** como un portón de seguridad (*security gate*) integral dentro del pipeline de CI/CD para la aplicación contenerizada. A través de este práctico se aborda la auditoría en tres dominios clave:
+1. **SCA (Software Composition Analysis):** Detección de vulnerabilidades en las librerías y paquetes del backend (Python/Flask).
+2. **Seguridad en Contenedores:** Inspección de vulnerabilidades (CVEs) en las capas de la imagen Docker final.
+3. **Seguridad en Infraestructura como Código (IaC):** Análisis de desconfiguraciones en los manifiestos de Kubernetes mediante el patrón **"Render First, Validate Second" (TP10B)**.
 
 ---
 
-## 🛡️ TP15: Análisis Estático de Seguridad (SAST) con Semgrep
+## 🏗️ Arquitectura del Pipeline CI/CD (3 Fases)
 
-El **TP15** complementa las etapas previas de seguridad (OWASP ZAP y Threagile) mediante la incorporación de **Static Application Security Testing (SAST)** automatizado en GitHub Actions. A diferencia de analizadores tradicionales, **Semgrep** funciona como un motor multilenguaje capaz de auditar todas las capas tecnológicas del proyecto en un único flujo de trabajo.
+El pipeline implementa el principio de **"Build Once, Test Everywhere"**, garantizando que la misma imagen compilada e inmutable en la primera fase sea la auditada y desplegada en producción.
 
-### 📜 Capas Auditadas y Reglas Aplicadas
+[Fase 1: Build & Package] ➔ [Fase 2A: Trivy Andon Cord] ➔ [Fase 3: Release & Deploy] (Imagen inmutable .tar)       (HIGH, CRITICAL -> exit 1)     (Push a Docker Hub & Helm) │ [Fase 2B: Reporte Informativo] (LOW, MEDIUM -> exit 0)
 
-| Capa Tecnológica | Archivos Auditados | Conjunto de Reglas (`--config`) | Riesgos y Vulnerabilidades Detectadas |
-|---|---|---|---|
-| **Backend Python** | `app/backend/app.py`, rutas API | `OWASP Top 10`, `p/python` | Inyección SQL, funciones peligrosas (`eval`), desinfección de entradas y configuración CORS. |
-| **Contenedores** | `Dockerfile` (frontend/backend) | `p/dockerfile` | Ejecución como usuario root, imágenes base vulnerables y manejo inseguro de capas. |
-| **Infraestructura (IaC)** | `guia-11/*.tf`, módulos | `p/terraform` | Reglas de Ingress permisivas (`0.0.0.0/0`), credenciales expuestas y almacenamiento inseguro. |
-| **Orquestación (K8s/Helm)** | `devops-tp12/chart`, manifiestos | `p/kubernetes`, `p/owasp-top-ten` | Ausencia de límites de recursos (`limits/requests`), Secrets en texto plano y permisos excesivos. |
+### 📋 Matriz de Control e Integración de Fases
 
----
-
-## 🚨 Estrategia de Seguridad: Guardián Estricto (*Andon Cord*)
-
-El pipeline implementa una evaluación en dos niveles para equilibrar la visibilidad de reportes con la protección del despliegue:
-
-1. **Modo Informativo (Reportes e Históricos):** Los pasos de generación de reportes finalizan con `|| true`. Esto garantiza que los artefactos (`semgrep-results.json`, `semgrep.sarif`) y la tabla en `$GITHUB_STEP_SUMMARY` se publiquen en cada ejecución, sin importar los hallazgos.
-2. **Andon Cord (Freno de Mano DevSecOps):** El paso final ejecuta Semgrep con la instrucción `--severity=ERROR --error`. Ante cualquier vulnerabilidad crítica (por ejemplo, ejecución remota por tubería como `curl | bash`), el paso fuerza la finalización con `exit code 1`, interrumpiendo el flujo de integración antes del despliegue.
+| Fase | Job | Dominio Auditado | Severidades | Exit Code | Acción ante Hallazgos | Evidencias / Artefactos |
+|---|---|---|---|---|---|---|
+| **Fase 1** | `build-and-package` | Compilación Docker | — | 0 | Genera paquete inmutable `app-image.tar` | Artefacto de imagen efímera |
+| **Fase 2A** | `trivy-andon-cord` | Contenedor, SCA e IaC Renderizado | `HIGH, CRITICAL` | **1** | **Andon Cord Activo**: Cancela el flujo y detiene el despliegue | Resumen en `$GITHUB_STEP_SUMMARY` |
+| **Fase 2B** | `trivy-audit-report` | Contenedor y Dependencias | `LOW, MEDIUM` | **0** | **Informativo**: Registra observaciones menores | Artefacto `.txt` descargable |
+| **Fase 3** | `deploy-k8s-helm` | Publicación y Despliegue | — | 0 | Promueve imágenes a Docker Hub y ejecuta Helm | Release activo en Kubernetes |
 
 ---
 
-## ⚙️ Estructura del Workflow (`.github/workflows/semgrep.yml`)
-1. **Renderizado de Helm:** Genera el YAML estático (`helm template`) hacia `.semgrep-tmp/` para analizar plantillas de Kubernetes antes de aplicar los manifiestos.
-2. **Escaneo Multilenguaje:** Analiza el código fuente, la infraestructura y los contenedores.
-3. **Resumen de Auditoría:** Construye un cuadro en Markdown con el estado de cada capa en `$GITHUB_STEP_SUMMARY`.
-4. **Carga de Artefactos:** Publica la carpeta comprimida `semgrep-report` (`semgrep-results.json`).
-5. **Code Scanning (SARIF):** Carga los resultados en la pestaña **Security** de GitHub.
-6. **Guardia Andon Cord:** Aplica la verificación estricta de severidad para detener el pipeline si existen bloqueantes.
+## ⚙️ Patrón TP10B: "Render First, Validate Second"
+
+Para prevenir **falsos positivos** generados por analizadores estáticos al evaluar código de plantillas (como las sintaxis de Go en Helm `{{ .Values... }}`), el pipeline aplica el patrón **TP10B**:
+
+1. Antes del escaneo de IaC, se ejecuta `helm template` para procesar todas las variables y condicionales del chart (`./devops-tp12/chart`).
+2. Se genera el manifiesto plano `manifests-rendered-prod.yaml`.
+3. Trivy ejecuta la instrucción `trivy config manifests-rendered-prod.yaml` sobre el YAML final, logrando una inspección precisa sin errores de sintaxis.
 
 ---
 
-## 💻 Ejecución y Auditoría en Entorno Local
+## 🚨 Política de Control: Andon Cord
 
-Para verificar el código localmente antes de enviar los cambios al repositorio remoto:
+En cumplimiento con los estándares DevSecOps, la **Fase 2A** actúa como un freno de mano automático (*Andon Cord*):
+* Si Trivy detecta cualquier vulnerabilidad clasificada como **`HIGH`** o **`CRITICAL`** en las dependencias, en la imagen Docker o en los manifiestos renderizados de Kubernetes, el paso finaliza con código de salida `1`.
+* Esto cancela inmediatamente la ejecución del pipeline, impidiendo que la **Fase 3 (`deploy-k8s-helm`)** publique o despliegue artefactos vulnerables en el clúster.
+
+---
+
+## 💻 Ejecución y Verificación en Entorno Local
+
+Para validar la seguridad antes de enviar los cambios al repositorio:
 
 ```bash
-# 1. Activar entorno virtual e instalar Semgrep
-source .venv/bin/activate
-python3 -m pip install semgrep
+# 1. Renderizar el Helm Chart (Patrón TP10B)
+helm template mi-app ./devops-tp12/chart > manifests-rendered-prod.yaml
 
-# 2. Escaneo general informativo (excluyendo carpetas secundarias)
-semgrep scan --config=auto --exclude=.venv --exclude='**/.terraform/**' .
+# 2. Escaneo de dependencias backend (SCA)
+trivy fs ./backend
 
-# 3. Escaneo de validación estricta (Andon Cord local)
-semgrep scan --config=p/owasp-top-ten --severity=ERROR .
-📁 Entregables del TP15
-Workflow: .github/workflows/semgrep.yml
-Reporte de Auditoría: Artefacto semgrep-report (semgrep-results.json) adjunto al run exitoso.
-Evidencias: Captura del fallo controlado por Andon Cord (curl-pipe-shell), commit de mitigación y ejecuciones posteriores completamente en verde (✅).
+# 3. Escaneo de la imagen Docker compilada
+docker build -t devops-portfolio:latest ./backend
+trivy image --severity HIGH,CRITICAL devops-portfolio:latest
+
+# 4. Auditoría de IaC sobre el manifiesto renderizado
+trivy config manifests-rendered-prod.yaml
+📁 Entregables del TP16
+Workflow CI/CD: .github/workflows/cicd.yml (Arquitectura en 3 fases y Andon Cord).
+Manifiesto Renderizado: manifests-rendered-prod.yaml (Generado según el patrón TP10B).
+Script de Verificación: scripts/verificar-trivy.sh.
+Reporte de Auditoría: Artefacto reporte-vulnerabilidades-trivy-low-medium.
+Evidencias de Control: Detención del pipeline en la Fase 2A ante las desconfiguraciones HIGH detectadas en la infraestructura renderizada.
 
 ---
