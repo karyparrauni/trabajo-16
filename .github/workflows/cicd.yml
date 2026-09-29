@@ -13,9 +13,6 @@ env:
   K8S_NAMESPACE: devops-portfolio
 
 jobs:
-  # =========================================================================
-  # FASE 1: BUILD & PACKAGE (Construcción Única y Exportación de Artefacto)
-  # =========================================================================
   build-and-package:
     name: "Fase 1: Build & Package (Imagen Inmutable)"
     runs-on: ubuntu-latest
@@ -42,9 +39,6 @@ jobs:
           path: build-artifacts/app-image.tar
           retention-days: 1
 
-  # =========================================================================
-  # FASE 2A: AUDITORÍA DE SEGURIDAD - ANDON CORD (HIGH/CRITICAL)
-  # =========================================================================
   trivy-andon-cord:
     name: "Fase 2A: Trivy - Andon Cord (HIGH/CRITICAL)"
     runs-on: ubuntu-latest
@@ -68,7 +62,6 @@ jobs:
         with:
           version: "v3.13.0"
 
-      # PATRÓN TP10B: Renderizado previo de Helm para evitar falsos positivos
       - name: Renderizar Helm Chart (TP10B - Sin Falsos Positivos)
         run: |
           helm template \${{ env.HELM_RELEASE_NAME }} ./devops-tp12/chart > manifests-rendered-prod.yaml
@@ -99,9 +92,6 @@ jobs:
           echo "|------------|-------------|---------------------|" >> \$GITHUB_STEP_SUMMARY
           echo "| **Contenedor, SCA e IaC Renderizado** | \`HIGH, CRITICAL\` | **Andon Cord Activo** (Bloquea si hay CVEs) |" >> \$GITHUB_STEP_SUMMARY
 
-  # =========================================================================
-  # FASE 2B: AUDITORÍA DE SEGURIDAD - REPORTE INFORMATIVO (LOW/MEDIUM)
-  # =========================================================================
   trivy-audit-report:
     name: "Fase 2B: Trivy - Reporte e Inspección (LOW/MEDIUM)"
     runs-on: ubuntu-latest
@@ -143,9 +133,6 @@ jobs:
           head -n 35 trivy-low-medium-report.txt || echo "No se registraron vulnerabilidades menores." >> \$GITHUB_STEP_SUMMARY
           echo "```" >> $GITHUB_STEP_SUMMARY
 
-  # =========================================================================
-  # FASE 3: RELEASE & DEPLOY (Publicación y Despliegue Post-Aprobación)
-  # =========================================================================
   deploy-k8s-helm:
     name: "Fase 3: Release & Deploy Helm K8s"
     runs-on: ubuntu-latest
