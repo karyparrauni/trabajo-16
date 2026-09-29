@@ -184,5 +184,3 @@ jobs:
         run: |
           echo "Desplegando Helm Chart '${{ env.HELM_RELEASE_NAME }}' en namespace '${{ env.K8S_NAMESPACE }}'..."
           # helm upgrade --install ${{ env.HELM_RELEASE_NAME }} ./devops-portfolio -n ${{ env.K8S_NAMESPACE }}
-________________________________________
-
