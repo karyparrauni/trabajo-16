@@ -68,7 +68,7 @@ jobs:
         with:
           version: 'v3.13.0'
 
-      # APLICACIÓN PATRÓN TP10B: Renderizado previo de Helm
+      # PATRÓN TP10B: Renderizado previo de Helm para evitar falsos positivos
       - name: Renderizar Helm Chart (TP10B - Sin Falsos Positivos)
         run: |
           helm template \${{ env.HELM_RELEASE_NAME }} ./devops-tp12/chart > manifests-rendered-prod.yaml
@@ -136,14 +136,6 @@ jobs:
           name: reporte-vulnerabilidades-trivy-low-medium
           path: trivy-low-medium-report.txt
           retention-days: 14
-
-      - name: Publicar Resumen en \$GITHUB_STEP_SUMMARY
-        run: |
-          echo "### Reporte de Vulnerabilidades Informativas (LOW/MEDIUM) 📋" >> \$GITHUB_STEP_SUMMARY
-          echo "El reporte completo ha sido adjuntado como **Artifact** descargable en este workflow." >> \$GITHUB_STEP_SUMMARY
-          echo "\`\`\`text" >> $GITHUB_STEP_SUMMARY
-          head -n 35 trivy-low-medium-report.txt || echo "No se registraron vulnerabilidades menores." >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> \$GITHUB_STEP_SUMMARY
 
   # =========================================================================
   # FASE 3: RELEASE & DEPLOY (Publicación y Despliegue Post-Aprobación)
