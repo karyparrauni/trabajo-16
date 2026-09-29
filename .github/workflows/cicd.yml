@@ -122,14 +122,10 @@ jobs:
         run: |
           docker load -i build-artifacts/app-image.tar
 
-      - name: Escaneo de Seguridad - Reporte Informativo
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: '${{ env.DOCKER_IMAGE }}:${{ github.sha }}'
-          format: 'table'
-          exit-code: '0'          # Permite continuar el flujo
-          severity: 'LOW,MEDIUM'
-        output: 'trivy-low-medium-report.txt'
+            - name: Instalar Trivy CLI y Generar Reporte
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+          trivy image --severity LOW,MEDIUM --format table --output trivy-low-medium-report.txt ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
 
       - name: Publicar Artifact de Vulnerabilidades Menores
         uses: actions/upload-artifact@v4
