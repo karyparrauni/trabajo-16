@@ -124,7 +124,7 @@ jobs:
 
             - name: Instalar Trivy CLI y Generar Reporte
         run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh -o install_trivy.sh && sh install_trivy.sh -b /usr/local/bin && rm -f install_trivy.sh
           trivy image --severity LOW,MEDIUM --format table --output trivy-low-medium-report.txt ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
 
       - name: Publicar Artifact de Vulnerabilidades Menores
