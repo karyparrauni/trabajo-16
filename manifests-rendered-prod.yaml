@@ -341,13 +341,8 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/proxy-body-size: 10m
     nginx.ingress.kubernetes.io/proxy-read-timeout: "30"
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
   ingressClassName: nginx
-  tls:
-    - hosts:
-        - devops-portfolio.local
-      secretName: devops-portfolio-tls
   rules:
     - host: devops-portfolio.local
       http:
